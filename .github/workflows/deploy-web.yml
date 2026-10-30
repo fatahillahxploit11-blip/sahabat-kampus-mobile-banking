@@ -1,0 +1,54 @@
+name: Deploy Web
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Siapkan situs
+        run: |
+          mkdir -p _site/lib libs
+          (cd libs && npm init -y >/dev/null && npm i chart.js@4.4.1 jspdf@2.5.1 xlsx@0.18.5)
+          cp libs/node_modules/chart.js/dist/chart.umd.js _site/lib/
+          cp libs/node_modules/jspdf/dist/jspdf.umd.min.js _site/lib/
+          cp libs/node_modules/xlsx/dist/xlsx.full.min.js _site/lib/
+          cp index.html _site/index.html
+          (convert icon-only.png -resize 180x180 _site/apple-touch-icon.png) || cp icon-only.png _site/apple-touch-icon.png
+          (convert icon-only.png -resize 192x192 _site/icon-192.png) || cp icon-only.png _site/icon-192.png
+          (convert icon-only.png -resize 512x512 _site/icon-512.png) || cp icon-only.png _site/icon-512.png
+          cat > _site/manifest.webmanifest <<'EOF'
+          {"name":"Sahabat Kampus Digital Banking","short_name":"Sahabat Kampus","start_url":"./","scope":"./","display":"standalone","background_color":"#0a2351","theme_color":"#0a2351","lang":"id","icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png"}]}
+          EOF
+          cat > _site/sw.js <<'EOF'
+          const C="sk-v1",A=["./","index.html","manifest.webmanifest","icon-192.png","icon-512.png","lib/chart.umd.js","lib/jspdf.umd.min.js","lib/xlsx.full.min.js"];
+          self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A)).then(()=>self.skipWaiting()))});
+          self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!=C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+          self.addEventListener("fetch",e=>{if(e.request.method!="GET")return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(m=>m||caches.match("index.html"))))});
+          EOF
+          ls -R _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
