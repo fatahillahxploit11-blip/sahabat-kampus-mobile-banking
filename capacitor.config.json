@@ -1,0 +1,7 @@
+{
+  "appId": "id.sahabatkampus.banking",
+  "appName": "Sahabat Kampus",
+  "webDir": "www",
+  "android": { "allowMixedContent": false },
+  "backgroundColor": "#0a2351"
+}

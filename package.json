@@ -1,0 +1,23 @@
+{
+  "name": "sahabat-kampus",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "libs": "node scripts/copy-libs.js",
+    "sync": "npm run libs && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/filesystem": "^6.0.0",
+    "@capacitor/share": "^6.0.0",
+    "capacitor-native-biometric": "^4.2.2",
+    "chart.js": "4.4.1",
+    "jspdf": "2.5.1",
+    "xlsx": "0.18.5"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.2.0"
+  }
+}
